@@ -9,71 +9,60 @@
     <style>
         :root {
             --neon: #AEE31B;
-            --glass-dark: rgba(0, 10, 5, 0.95);
+            --glass-dark: rgba(0, 12, 6, 0.96);
             --bg-blur: blur(25px);
         }
 
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', 'PingFang SC', sans-serif; color: white; }
 
-        /* 顶部标题 */
         .header { 
             position: absolute; top: 0; width: 100%; height: 80px; 
-            background: linear-gradient(to bottom, rgba(0,0,0,1) 40%, transparent);
+            background: linear-gradient(to bottom, rgba(0,0,0,1) 30%, transparent);
             display: flex; justify-content: center; align-items: center; z-index: 100;
         }
-        .header h1 { margin: 0; letter-spacing: 15px; font-weight: 200; font-size: 30px; color: var(--neon); text-shadow: 0 0 15px var(--neon); }
+        .header h1 { margin: 0; letter-spacing: 12px; font-weight: 200; font-size: 28px; color: var(--neon); text-shadow: 0 0 15px var(--neon); }
 
-        /* 右侧面板 - 极致清晰度 */
+        /* 右侧面板 */
         .symptom-panel {
             position: absolute; right: 25px; top: 110px; width: 280px;
             z-index: 110; display: flex; flex-direction: column; gap: 12px;
         }
         .symptom-btn {
             background: var(--glass-dark); backdrop-filter: var(--bg-blur);
-            border: 1px solid rgba(174, 227, 27, 0.6); padding: 16px;
+            border: 1px solid rgba(174, 227, 27, 0.5); padding: 16px;
             border-radius: 12px; cursor: pointer; transition: all 0.3s;
-            color: #fff; line-height: 1.5; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+            color: #fff; line-height: 1.5; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
-        .btn-title { color: var(--neon); font-weight: bold; display: block; font-size: 17px; margin-bottom: 4px; text-shadow: 2px 2px 4px #000; }
-        .btn-desc { font-size: 13px; opacity: 0.95; color: #eee; text-shadow: 1px 1px 2px #000; }
+        .btn-title { color: var(--neon); font-weight: bold; display: block; font-size: 16px; margin-bottom: 4px; text-shadow: 1px 1px 3px #000; }
+        .btn-desc { font-size: 13px; opacity: 0.9; color: #ddd; text-shadow: 1px 1px 2px #000; }
         
-        .symptom-btn:hover { border-color: var(--neon); transform: translateX(-5px); background: rgba(174, 227, 27, 0.1); }
+        .symptom-btn:hover { border-color: var(--neon); transform: translateX(-5px); }
         .symptom-btn.active { background: var(--neon); border-color: var(--neon); }
         .symptom-btn.active .btn-title, .symptom-btn.active .btn-desc { color: #000; text-shadow: none; }
 
         /* 详情卡片 */
         #detail-card {
             position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(250%);
-            width: 460px; background: rgba(0, 15, 8, 0.98); border: 2px solid var(--neon);
-            padding: 30px; border-radius: 24px; backdrop-filter: blur(35px);
+            width: 460px; background: rgba(0, 12, 6, 0.98); border: 1.5px solid var(--neon);
+            padding: 30px; border-radius: 24px; backdrop-filter: blur(40px);
             transition: all 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.1); z-index: 200;
-            box-shadow: 0 0 80px rgba(0,0,0,1);
         }
         #detail-card.show { transform: translateX(-50%) translateY(0); }
-        .card-header { border-bottom: 1px solid rgba(174, 227, 27, 0.3); padding-bottom: 15px; margin-bottom: 15px; }
-        .card-title { color: var(--neon); font-size: 30px; font-weight: bold; display: flex; align-items: center; gap: 12px; }
-        .card-title::before { content: ''; width: 6px; height: 30px; background: var(--neon); }
-        .card-row { margin-bottom: 15px; font-size: 16px; line-height: 1.7; color: #fff; }
-        .row-label { color: var(--neon); font-weight: bold; margin-right: 10px; background: rgba(174, 227, 27, 0.1); padding: 2px 6px; border-radius: 4px; }
+        .card-header { border-bottom: 1px solid rgba(174, 227, 27, 0.2); padding-bottom: 15px; margin-bottom: 15px; }
+        .card-title { color: var(--neon); font-size: 26px; font-weight: bold; display: flex; align-items: center; gap: 12px; }
+        .card-title::before { content: ''; width: 4px; height: 26px; background: var(--neon); }
+        .card-row { margin-bottom: 12px; font-size: 15px; line-height: 1.6; color: #fff; }
+        .row-label { color: var(--neon); font-weight: bold; margin-right: 10px; opacity: 0.9; }
 
         #output_canvas { transform: scaleX(-1); width: 100vw; height: 100vh; object-fit: cover; }
         #input_video { display: none; }
-        
-        .scanning-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(174, 227, 27, 0.04) 0%, transparent 50%, rgba(174, 227, 27, 0.04) 100%);
-            background-size: 100% 20px; animation: scan-anim 8s linear infinite;
-            pointer-events: none; z-index: 50;
-        }
-        @keyframes scan-anim { from { background-position: 0 0; } to { background-position: 0 100%; } }
     </style>
 </head>
 <body onclick="hideCard()">
 
 <div class="header"><h1>拍一拍</h1></div>
-<div class="scanning-overlay"></div>
 
-<div class="symptom-panel" id="panel">
+<div class="symptom-panel">
     <div class="symptom-btn" onclick="selectSymptom('eye', this, event)">
         <span class="btn-title">眼部问题识别</span>
         <span class="btn-desc">干涩、酸胀、模糊、黑眼圈</span>
@@ -90,17 +79,15 @@
         <span class="btn-title">肩颈酸痛识别</span>
         <span class="btn-desc">风池穴、天柱穴、颈夹脊穴</span>
     </div>
-    <div class="symptom-btn" onclick="selectSymptom('reset', this, event)" style="opacity:0.6; border-style:dashed;">重置全屏识别</div>
+    <div class="symptom-btn" onclick="selectSymptom('reset', this, event)" style="opacity:0.5; font-size:13px; border-style:dashed;">重置全屏扫描</div>
 </div>
 
 <div id="detail-card" onclick="event.stopPropagation()">
-    <div class="card-header">
-        <div class="card-title" id="p-name">穴位名称</div>
-    </div>
+    <div class="card-header"><div class="card-title" id="p-name">穴位名称</div></div>
     <div class="card-body">
-        <div class="card-row"><span class="row-label">定位</span><span id="p-loc"></span></div>
-        <div class="card-row"><span class="row-label">手法</span><span id="p-method"></span></div>
-        <div class="card-row"><span class="row-label">功效</span><span id="p-eff"></span></div>
+        <div class="card-row"><span class="row-label">[ 定位 ]</span><span id="p-loc"></span></div>
+        <div class="card-row"><span class="row-label">[ 手法 ]</span><span id="p-method"></span></div>
+        <div class="card-row"><span class="row-label">[ 功效 ]</span><span id="p-eff"></span></div>
     </div>
 </div>
 
@@ -115,25 +102,20 @@
     let selectedType = 'reset';
     let lastResults = null;
 
-    // 穴位数据库 - 精准映射背面穴位到正面投影
+    // 穴位数据库：优化点位索引和天柱标签方向
     const ACUPOINTS = [
-        // 眼部
         { category:['eye'], name: "睛明", index: 133, loc: "眼内角稍上方凹陷处", method: "食指轻按，不打圈，轻压30秒×2次", eff: "缓解眼干、视疲劳，改善视力模糊" },
         { category:['eye'], name: "攒竹", index: 55, loc: "眉头内侧凹陷（眉毛起点）", method: "拇指或食指轻按+小幅打圈，1分钟", eff: "缓解眼酸胀、眉骨紧张" },
         { category:['eye'], name: "四白", index: 101, loc: "瞳孔正下方约一指处", method: "食指轻按，避免用力过大，30秒×2", eff: "改善黑眼圈、眼袋，促进眼周循环" },
-        { category:['eye','head'], name: "太阳穴", index: 21, loc: "眉梢与眼角延长线外侧凹陷", method: "中指顺时针打圈按摩1分钟", eff: "缓解眼疲劳、止头痛、缓解偏头痛" },
-        
-        // 头部
+        { category:['eye','head'], name: "太阳穴", index: 21, loc: "眉梢与眼角延长线外侧凹陷", method: "中指顺时针打圈按摩1分钟", eff: "缓解眼疲劳、止头痛、减轻胀痛" },
         { category:['head','sleep'], name: "百会", index: 10, loc: "头顶正中（前发际正中直上）", method: "中指垂直按压+缓慢放松，1分钟", eff: "提神醒脑、缓解头晕；调节神经，改善睡眠" },
-        
-        // 睡眠 & 肩颈共用：投影至颈侧上缘 (FaceMesh 132/361附近)
-        { category:['eye','head','sleep','neck'], name: "风池", index: 172, loc: "后颈发际线两侧凹陷处（映射至颈侧上缘）", method: "双手拇指向内上方顶按1分钟", eff: "改善眼干、头晕；通络止痛" },
-        { category:['sleep'], name: "安眠", index: 127, loc: "耳后翳风与风池之间中点", method: "食指或拇指轻按+慢揉1–2分钟", eff: "助眠核心穴，缓解失眠、多梦" },
         { category:['sleep','head'], name: "印堂", index: 9, loc: "两眉中间", method: "食指轻按+顺时针打圈1分钟", eff: "安神、缓解焦虑、帮助入睡" },
         
-        // 肩颈专用：映射至颈部侧面投影
-        { category:['head','neck'], name: "天柱", index: 152, loc: "后颈大筋外侧凹陷处（映射至颈侧中部）", method: "拇指向上推按1分钟", eff: "缓解头重、颈紧引起的头痛" },
-        { category:['neck'], name: "颈夹脊穴", index: 148, loc: "颈椎旁开0.5寸（映射至颈根部两侧）", method: "双手食中指并拢，沿颈椎两侧上下推揉1分钟", eff: "缓解颈部僵硬，改善上肢麻木" }
+        // 颈部点位分层映射 (垂直排列避免重叠)
+        { category:['eye','head','sleep','neck'], name: "风池", index: 172, loc: "后颈发际线两侧凹陷处（侧影投影）", method: "双手拇指向内上方顶按1分钟", eff: "改善眼干、头晕、通络止痛" },
+        { category:['sleep'], name: "安眠", index: 127, loc: "耳垂后方的骨头（乳突）与后颈风池穴之间的中点，偏上约一指处的凹陷", method: "食指或拇指轻按+慢揉1–2分钟", eff: "助眠核心穴，缓解失眠、多梦" },
+        { category:['head','neck'], name: "天柱", index: 150, align: "left", loc: "后颈大筋外侧凹陷处（侧影中段）", method: "拇指向上推按1分钟", eff: "缓解头重、颈紧引起的头痛" },
+        { category:['neck'], name: "颈夹脊穴", index: 136, loc: "颈椎旁开0.5寸（侧影根部）", method: "双手食中指并拢，沿颈椎两侧上下推揉1分钟", eff: "缓解颈部僵硬，改善上肢麻木" }
     ];
 
     function selectSymptom(type, btn, event) {
@@ -158,30 +140,15 @@
         canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
         if (results.faceLandmarks) {
-            drawCyberGrid(results.faceLandmarks);
-            
             ACUPOINTS.forEach(p => {
-                let lm = results.faceLandmarks[p.index];
+                const lm = results.faceLandmarks[p.index];
                 if (lm) {
-                    const isVisible = selectedType === 'reset' || p.category.includes(selectedType);
-                    drawPoint(lm, p, isVisible);
+                    const active = selectedType === 'reset' || p.category.includes(selectedType);
+                    drawPoint(lm, p, active);
                 }
             });
         }
         canvasCtx.restore();
-    }
-
-    function drawCyberGrid(landmarks) {
-        canvasCtx.beginPath();
-        canvasCtx.strokeStyle = "rgba(174, 227, 27, 0.2)";
-        canvasCtx.lineWidth = 0.5;
-        const oval = [10, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 10];
-        oval.forEach((idx, i) => {
-            const p = landmarks[idx];
-            if(i === 0) canvasCtx.moveTo(p.x * canvasElement.width, p.y * canvasElement.height);
-            else canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height);
-        });
-        canvasCtx.stroke();
     }
 
     function drawPoint(lm, data, active) {
@@ -190,17 +157,20 @@
         const time = Date.now() / 1000;
 
         if (active) {
+            // 缩小版涟漪
             canvasCtx.beginPath();
-            canvasCtx.arc(x, y, 10 + (time % 1) * 15, 0, Math.PI * 2);
+            canvasCtx.arc(x, y, 6 + (time % 1) * 8, 0, Math.PI * 2);
             canvasCtx.strokeStyle = `rgba(174, 227, 27, ${1 - (time % 1)})`;
+            canvasCtx.lineWidth = 1;
             canvasCtx.stroke();
             canvasCtx.fillStyle = "#AEE31B";
         } else {
-            canvasCtx.fillStyle = "rgba(255,255,255,0.2)";
+            canvasCtx.fillStyle = "rgba(255,255,255,0.25)";
         }
 
+        // 缩小穴位点
         canvasCtx.beginPath();
-        canvasCtx.arc(x, y, active ? 8 : 2.5, 0, Math.PI * 2);
+        canvasCtx.arc(x, y, active ? 4 : 1.5, 0, Math.PI * 2);
         canvasCtx.fill();
 
         if (active) {
@@ -208,15 +178,22 @@
             canvasCtx.translate(x, y);
             canvasCtx.scale(-1, 1);
             canvasCtx.fillStyle = "white";
-            canvasCtx.font = "bold 15px Arial";
-            canvasCtx.shadowBlur = 8;
+            canvasCtx.font = "bold 13px Arial";
+            canvasCtx.shadowBlur = 4;
             canvasCtx.shadowColor = "black";
-            canvasCtx.fillText(data.name, 15, 5);
+
+            // 天柱穴文字向左对齐，其他向右
+            if (data.align === "left") {
+                canvasCtx.textAlign = "right";
+                canvasCtx.fillText(data.name, -10, 5);
+            } else {
+                canvasCtx.textAlign = "left";
+                canvasCtx.fillText(data.name, 10, 5);
+            }
             canvasCtx.restore();
         }
     }
 
-    // 交互逻辑：优化最近邻算法，专门为颈部边缘点提供灵敏度
     canvasElement.addEventListener('click', (e) => {
         if (!lastResults || !lastResults.faceLandmarks) return;
         e.stopPropagation();
@@ -225,10 +202,10 @@
         const clickY = (e.clientY - rect.top) / rect.height;
 
         let selectedPoint = null;
-        let minDistance = 0.035; // 稍微扩大判定范围以适应颈部边缘
+        let minDistance = 0.03; // 判定半径
 
         ACUPOINTS.forEach(p => {
-            let lm = lastResults.faceLandmarks[p.index];
+            const lm = lastResults.faceLandmarks[p.index];
             if (lm) {
                 const dist = Math.hypot(clickX - lm.x, (clickY - lm.y) * (rect.height/rect.width));
                 if (dist < minDistance) {
@@ -238,17 +215,16 @@
             }
         });
 
-        if (selectedPoint) showCard(selectedPoint);
-        else hideCard();
+        if (selectedPoint) {
+            document.getElementById('p-name').innerText = selectedPoint.name;
+            document.getElementById('p-loc').innerText = selectedPoint.loc;
+            document.getElementById('p-method').innerText = selectedPoint.method;
+            document.getElementById('p-eff').innerText = selectedPoint.eff;
+            document.getElementById('detail-card').classList.add('show');
+        } else {
+            hideCard();
+        }
     });
-
-    function showCard(p) {
-        document.getElementById('p-name').innerText = p.name;
-        document.getElementById('p-loc').innerText = p.loc;
-        document.getElementById('p-method').innerText = p.method;
-        document.getElementById('p-eff').innerText = p.eff;
-        document.getElementById('detail-card').classList.add('show');
-    }
 
     const holistic = new Holistic({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}` });
     holistic.setOptions({ modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
