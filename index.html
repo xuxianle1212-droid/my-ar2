@@ -108,11 +108,11 @@
         { category:['head','sleep'], name: "百会", index: 10, loc: "头顶正中（前发际正中直上）", method: "中指垂直按压+缓慢放松，1分钟", eff: "提神醒脑、缓解头晕；调节神经，改善睡眠" },
         { category:['sleep','head'], name: "印堂", index: 9, loc: "两眉中间", method: "食指轻按+顺时针打圈1分钟", eff: "安神、缓解焦虑、帮助入睡" },
         
-        // 颈部点位：重新物理隔离，确保Index唯一且垂直分层
+        // 颈部点位：Index 172 (风池-高)、Index 127 (安眠-侧)、Index 152 (天柱-中)、Index 200 (颈夹脊-低)
         { category:['eye','head','sleep','neck'], name: "风池", index: 172, loc: "后颈发际线两侧凹陷处（映射至颈侧上缘）", method: "双手拇指向内上方顶按1分钟", eff: "改善眼干、头晕、通络止痛" },
         { category:['sleep'], name: "安眠", index: 127, loc: "耳垂后方的骨头（乳突）与后颈风池穴之间的中点，偏上约一指处的凹陷", method: "食指或拇指轻按+慢揉1–2分钟", eff: "助眠核心穴，缓解失眠、多梦" },
-        { category:['head','neck'], name: "天柱", index: 152, align: "left", loc: "后颈部发际线处，颈椎两侧大筋（斜方肌外缘）外侧约一指的凹陷", method: "拇指向上推按1分钟", eff: "缓解头重、颈紧引起的头痛" },
-        { category:['neck'], name: "颈夹脊穴", index: 148, loc: "颈椎旁开0.5寸（映射至颈侧下缘）", method: "双手食中指并拢，沿颈椎两侧上下推揉1分钟", eff: "缓解颈部僵硬，改善上肢麻木" }
+        { category:['head','neck'], name: "天柱", index: 152, align: "left", isNeck: true, loc: "后颈部发际线处，颈椎两侧大筋（斜方肌外缘）外侧约一指的凹陷", method: "拇指向上推按1分钟", eff: "缓解头重、颈紧引起的头痛" },
+        { category:['neck'], name: "颈夹脊穴", index: 200, isNeck: true, loc: "颈椎（后颈正中骨头）两侧，各旁开约一指（0.5–1寸）的一条纵向穴位带", method: "双手食中指并拢，沿颈椎两侧上下推揉1分钟", eff: "缓解颈部僵硬，改善上肢麻木" }
     ];
 
     function selectSymptom(type, btn, event) {
@@ -188,7 +188,7 @@
         }
     }
 
-    // 交互逻辑：使用最近邻+距离阈值，防止误触邻近穴位
+    // 交互逻辑优化
     canvasElement.addEventListener('click', (e) => {
         if (!lastResults || !lastResults.faceLandmarks) return;
         e.stopPropagation();
@@ -197,13 +197,16 @@
         const clickY = (e.clientY - rect.top) / rect.height;
 
         let selectedPoint = null;
-        let minDistance = 0.025; // 严格控制判定距离
+        let minDistance = 1.0; 
 
         ACUPOINTS.forEach(p => {
             const lm = lastResults.faceLandmarks[p.index];
             if (lm) {
                 const dist = Math.hypot(clickX - lm.x, (clickY - lm.y) * (rect.height/rect.width));
-                if (dist < minDistance) {
+                // 颈部穴位感应范围扩大至 0.04，其他穴位 0.025
+                const threshold = p.isNeck ? 0.04 : 0.025; 
+                
+                if (dist < threshold && dist < minDistance) {
                     minDistance = dist;
                     selectedPoint = p;
                 }
