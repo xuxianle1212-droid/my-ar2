@@ -22,7 +22,6 @@
         }
         .header h1 { margin: 0; letter-spacing: 12px; font-weight: 200; font-size: 28px; color: var(--neon); text-shadow: 0 0 15px var(--neon); }
 
-        /* 右侧面板 */
         .symptom-panel {
             position: absolute; right: 25px; top: 110px; width: 280px;
             z-index: 110; display: flex; flex-direction: column; gap: 12px;
@@ -40,7 +39,6 @@
         .symptom-btn.active { background: var(--neon); border-color: var(--neon); }
         .symptom-btn.active .btn-title, .symptom-btn.active .btn-desc { color: #000; text-shadow: none; }
 
-        /* 详情卡片 */
         #detail-card {
             position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(250%);
             width: 460px; background: rgba(0, 12, 6, 0.98); border: 1.5px solid var(--neon);
@@ -79,7 +77,7 @@
         <span class="btn-title">肩颈酸痛识别</span>
         <span class="btn-desc">风池穴、天柱穴、颈夹脊穴</span>
     </div>
-    <div class="symptom-btn" onclick="selectSymptom('reset', this, event)" style="opacity:0.5; font-size:13px; border-style:dashed;">重置全屏扫描</div>
+    <div class="symptom-btn" onclick="selectSymptom('reset', this, event)" style="opacity:0.5; border-style:dashed;">重置识别</div>
 </div>
 
 <div id="detail-card" onclick="event.stopPropagation()">
@@ -102,7 +100,6 @@
     let selectedType = 'reset';
     let lastResults = null;
 
-    // 穴位数据库：优化点位索引和天柱标签方向
     const ACUPOINTS = [
         { category:['eye'], name: "睛明", index: 133, loc: "眼内角稍上方凹陷处", method: "食指轻按，不打圈，轻压30秒×2次", eff: "缓解眼干、视疲劳，改善视力模糊" },
         { category:['eye'], name: "攒竹", index: 55, loc: "眉头内侧凹陷（眉毛起点）", method: "拇指或食指轻按+小幅打圈，1分钟", eff: "缓解眼酸胀、眉骨紧张" },
@@ -111,11 +108,11 @@
         { category:['head','sleep'], name: "百会", index: 10, loc: "头顶正中（前发际正中直上）", method: "中指垂直按压+缓慢放松，1分钟", eff: "提神醒脑、缓解头晕；调节神经，改善睡眠" },
         { category:['sleep','head'], name: "印堂", index: 9, loc: "两眉中间", method: "食指轻按+顺时针打圈1分钟", eff: "安神、缓解焦虑、帮助入睡" },
         
-        // 颈部点位分层映射 (垂直排列避免重叠)
-        { category:['eye','head','sleep','neck'], name: "风池", index: 172, loc: "后颈发际线两侧凹陷处（侧影投影）", method: "双手拇指向内上方顶按1分钟", eff: "改善眼干、头晕、通络止痛" },
+        // 颈部点位：重新物理隔离，确保Index唯一且垂直分层
+        { category:['eye','head','sleep','neck'], name: "风池", index: 172, loc: "后颈发际线两侧凹陷处（映射至颈侧上缘）", method: "双手拇指向内上方顶按1分钟", eff: "改善眼干、头晕、通络止痛" },
         { category:['sleep'], name: "安眠", index: 127, loc: "耳垂后方的骨头（乳突）与后颈风池穴之间的中点，偏上约一指处的凹陷", method: "食指或拇指轻按+慢揉1–2分钟", eff: "助眠核心穴，缓解失眠、多梦" },
-        { category:['head','neck'], name: "天柱", index: 150, align: "left", loc: "后颈大筋外侧凹陷处（侧影中段）", method: "拇指向上推按1分钟", eff: "缓解头重、颈紧引起的头痛" },
-        { category:['neck'], name: "颈夹脊穴", index: 136, loc: "颈椎旁开0.5寸（侧影根部）", method: "双手食中指并拢，沿颈椎两侧上下推揉1分钟", eff: "缓解颈部僵硬，改善上肢麻木" }
+        { category:['head','neck'], name: "天柱", index: 152, align: "left", loc: "后颈部发际线处，颈椎两侧大筋（斜方肌外缘）外侧约一指的凹陷", method: "拇指向上推按1分钟", eff: "缓解头重、颈紧引起的头痛" },
+        { category:['neck'], name: "颈夹脊穴", index: 148, loc: "颈椎旁开0.5寸（映射至颈侧下缘）", method: "双手食中指并拢，沿颈椎两侧上下推揉1分钟", eff: "缓解颈部僵硬，改善上肢麻木" }
     ];
 
     function selectSymptom(type, btn, event) {
@@ -157,7 +154,6 @@
         const time = Date.now() / 1000;
 
         if (active) {
-            // 缩小版涟漪
             canvasCtx.beginPath();
             canvasCtx.arc(x, y, 6 + (time % 1) * 8, 0, Math.PI * 2);
             canvasCtx.strokeStyle = `rgba(174, 227, 27, ${1 - (time % 1)})`;
@@ -168,7 +164,6 @@
             canvasCtx.fillStyle = "rgba(255,255,255,0.25)";
         }
 
-        // 缩小穴位点
         canvasCtx.beginPath();
         canvasCtx.arc(x, y, active ? 4 : 1.5, 0, Math.PI * 2);
         canvasCtx.fill();
@@ -182,7 +177,6 @@
             canvasCtx.shadowBlur = 4;
             canvasCtx.shadowColor = "black";
 
-            // 天柱穴文字向左对齐，其他向右
             if (data.align === "left") {
                 canvasCtx.textAlign = "right";
                 canvasCtx.fillText(data.name, -10, 5);
@@ -194,6 +188,7 @@
         }
     }
 
+    // 交互逻辑：使用最近邻+距离阈值，防止误触邻近穴位
     canvasElement.addEventListener('click', (e) => {
         if (!lastResults || !lastResults.faceLandmarks) return;
         e.stopPropagation();
@@ -202,7 +197,7 @@
         const clickY = (e.clientY - rect.top) / rect.height;
 
         let selectedPoint = null;
-        let minDistance = 0.03; // 判定半径
+        let minDistance = 0.025; // 严格控制判定距离
 
         ACUPOINTS.forEach(p => {
             const lm = lastResults.faceLandmarks[p.index];
