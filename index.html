@@ -9,89 +9,90 @@
     <style>
         :root {
             --neon: #AEE31B;
-            --glass-dark: rgba(0, 15, 5, 0.85); /* 显著加深的底色 */
+            --glass-dark: rgba(0, 10, 5, 0.9);
             --bg-blur: blur(15px);
         }
 
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', 'PingFang SC', sans-serif; color: white; }
 
-        /* 顶部标题 */
         .header { 
             position: absolute; top: 0; width: 100%; height: 80px; 
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+            background: linear-gradient(to bottom, rgba(0,0,0,1), transparent);
             display: flex; justify-content: center; align-items: center; z-index: 100;
         }
         .header h1 { margin: 0; letter-spacing: 15px; font-weight: 200; font-size: 30px; color: var(--neon); text-shadow: 0 0 15px var(--neon); }
 
-        /* 右侧面板 - 增强对比度 */
+        /* 右侧面板：加深对比，增强辨识度 */
         .symptom-panel {
-            position: absolute; right: 25px; top: 110px; width: 220px;
+            position: absolute; right: 25px; top: 110px; width: 260px;
             z-index: 110; display: flex; flex-direction: column; gap: 12px;
         }
-        .panel-label { color: var(--neon); font-size: 11px; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.9; text-shadow: 0 0 5px #000; }
-        
         .symptom-btn {
             background: var(--glass-dark); backdrop-filter: var(--bg-blur);
-            border: 1px solid rgba(174, 227, 27, 0.4); padding: 16px;
-            border-radius: 10px; cursor: pointer; transition: all 0.3s;
-            font-size: 16px; color: #fff; text-align: center;
-            text-shadow: 0 1px 4px rgba(0,0,0,1); /* 文字阴影确保清晰 */
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid rgba(174, 227, 27, 0.5); padding: 16px;
+            border-radius: 12px; cursor: pointer; transition: all 0.3s;
+            font-size: 15px; color: #fff; line-height: 1.4;
+            text-shadow: 1px 1px 2px #000; /* 文字黑色描边 */
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
         }
-        .symptom-btn:hover { border-color: var(--neon); background: rgba(174, 227, 27, 0.15); transform: translateX(-5px); }
-        .symptom-btn.active { background: var(--neon); color: #000; font-weight: bold; text-shadow: none; box-shadow: 0 0 20px var(--neon); }
-
-        /* 左侧终端数据 */
-        .terminal {
-            position: absolute; left: 25px; top: 110px; width: 240px;
-            font-family: 'Courier New', monospace; font-size: 11px; color: var(--neon);
-            pointer-events: none; text-shadow: 0 0 5px #000;
-        }
+        .btn-title { color: var(--neon); font-weight: bold; margin-bottom: 4px; display: block; font-size: 16px; }
+        .symptom-btn:hover { border-color: var(--neon); transform: translateX(-5px); background: rgba(174, 227, 27, 0.1); }
+        .symptom-btn.active { background: var(--neon); border-color: var(--neon); }
+        .symptom-btn.active .btn-title, .symptom-btn.active { color: #000; text-shadow: none; font-weight: bold; }
 
         /* 详情卡片 */
         #detail-card {
-            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%) translateY(200%);
-            width: 440px; background: rgba(0, 10, 5, 0.95); border: 1px solid var(--neon);
-            padding: 25px; border-radius: 20px; backdrop-filter: blur(20px);
-            transition: all 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 200;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%) translateY(250%);
+            width: 440px; background: rgba(0, 15, 5, 0.98); border: 2px solid var(--neon);
+            padding: 25px; border-radius: 20px; backdrop-filter: blur(25px);
+            transition: all 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.1); z-index: 200;
         }
         #detail-card.show { transform: translateX(-50%) translateY(0); }
         .card-title { color: var(--neon); font-size: 26px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
         .card-title::before { content: ''; width: 5px; height: 26px; background: var(--neon); }
         .card-body { font-size: 16px; line-height: 1.7; color: #eee; }
 
-        /* 画布 */
-        #output_canvas { transform: scaleX(-1); width: 100vw; height: 100vh; object-fit: cover; }
+        #output_canvas { transform: scaleX(-1); width: 100vw; height: 100vh; object-fit: cover; cursor: crosshair; }
         #input_video { display: none; }
         
+        /* 扫描动画 */
         .scanning-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(174, 227, 27, 0.05) 0%, transparent 50%, rgba(174, 227, 27, 0.05) 100%);
-            background-size: 100% 8px; animation: scan-anim 6s linear infinite;
+            background-size: 100% 12px; animation: scan-anim 5s linear infinite;
             pointer-events: none; z-index: 50;
         }
         @keyframes scan-anim { from { background-position: 0 0; } to { background-position: 0 100%; } }
     </style>
 </head>
-<body>
+<body onclick="handleGlobalClick(event)">
 
 <div class="header"><h1>拍一拍</h1></div>
 <div class="scanning-overlay"></div>
 
-<!-- 仅保留四个最核心选项 -->
-<div class="symptom-panel">
-    <div class="panel-label">CORE_THERAPY_MODES</div>
-    <div class="symptom-btn" onclick="selectSymptom('neck', this)">肩颈僵硬缓解</div>
-    <div class="symptom-btn" onclick="selectSymptom('eye', this)">消除眼部疲劳</div>
-    <div class="symptom-btn" onclick="selectSymptom('head', this)">缓解偏头胀痛</div>
-    <div class="symptom-btn" onclick="selectSymptom('nose', this)">感冒通鼻舒络</div>
-    <div class="symptom-btn" onclick="selectSymptom('reset', this)" style="margin-top:20px; border-style:dashed; opacity:0.8; font-size:14px;">重置全屏扫描</div>
+<div class="symptom-panel" id="panel">
+    <div class="symptom-btn" onclick="selectSymptom('eye', this, event)">
+        <span class="btn-title">眼部疲劳干涩</span>
+        眼睛干涩、酸胀、黑眼圈
+    </div>
+    <div class="symptom-btn" onclick="selectSymptom('head', this, event)">
+        <span class="btn-title">头部眩晕偏痛</span>
+        偏头痛、太阳穴跳痛、沉重
+    </div>
+    <div class="symptom-btn" onclick="selectSymptom('sleep', this, event)">
+        <span class="btn-title">入睡困难多梦</span>
+        难入睡、易醒、醒后疲劳
+    </div>
+    <div class="symptom-btn" onclick="selectSymptom('neck', this, event)">
+        <span class="btn-title">肩颈僵硬酸痛</span>
+        脖子僵硬、肩膀酸痛
+    </div>
+    <div class="symptom-btn" onclick="selectSymptom('reset', this, event)" style="margin-top:10px; opacity:0.7; border-style:dashed;">
+        重置全屏扫描识别
+    </div>
 </div>
 
-<div class="terminal" id="terminal"></div>
-
-<div id="detail-card">
+<div id="detail-card" onclick="event.stopPropagation()">
     <div class="card-title" id="p-name">穴位名称</div>
     <div class="card-body">
         <div style="margin-bottom:12px;"><b style="color:var(--neon)">[ 导引定位 ]</b> <span id="p-loc"></span></div>
@@ -111,39 +112,43 @@
     let selectedType = 'reset';
     let lastResults = null;
 
-    // 严谨校对后的分类映射
     const SYMPTOMS = {
-        'neck': { points: ['肩井'], advise: '建议：掌心向下，用中指点揉肩井穴，配合缓慢转颈。' },
-        'eye': { points: ['攒竹', '鱼腰', '四白'], advise: '建议：闭目，用食指关节轻揉，每次持续3-5分钟。' },
-        'head': { points: ['太阳穴', '印堂', '神庭'], advise: '建议：由印堂穴向上推至神庭穴，再顺时针揉动太阳穴。' },
-        'nose': { points: ['迎香穴', '印堂'], advise: '建议：按压迎香穴至有酸胀感，有助于快速宣通鼻窍。' },
+        'eye': { points: ['攒竹', '鱼腰', '四白'], advise: '建议：深呼吸，用指腹轻点按，每次持续3分钟。' },
+        'head': { points: ['太阳穴', '神庭', '印堂'], advise: '建议：顺时针按压太阳穴，配合向后推按神庭。' },
+        'sleep': { points: ['安眠点', '印堂'], advise: '建议：睡前点按印堂及耳后安眠区，有助于宁心。' },
+        'neck': { points: ['肩井'], advise: '建议：揉捏肩井穴，配合扩胸运动以松解筋膜。' },
         'reset': { points: [], advise: '' }
     };
 
-    // 严谨校对后的穴位库
+    // 重新严谨校对的穴位索引及信息
     const ACUPOINTS = [
-        { type:'neck', name: "肩井", isPose: true, index: 11, loc: "肩背最高处，大椎与肩峰连线中点", eff: "缓解肩颈僵硬、改善落枕" },
-        { type:'eye', name: "攒竹", index: 55, loc: "面部眉头凹陷中", eff: "缓解眼睑瞤动、消除视疲劳" },
-        { type:'eye', name: "鱼腰", index: 52, loc: "眉毛正中，瞳孔直上", eff: "缓解目赤肿痛、眼部胀痛" },
-        { type:'eye', name: "四白", index: 101, loc: "目正视，瞳孔直下眶下孔凹陷处", eff: "疏风明目、改善眼周循环" },
-        { type:'head', name: "太阳穴", index: 21, loc: "眉梢与目外眦之间向后约一横指处", eff: "清肝明目、缓解顽固性头痛" },
-        { type:'head', name: "印堂", index: 9, loc: "两眉头连线的中点", eff: "安神定惊、缓解前额痛" },
-        { type:'head', name: "神庭", index: 10, loc: "前发际正中直上0.5寸", eff: "宁神醒脑、改善头晕不适" },
-        { type:'nose', name: "迎香穴", index: 129, loc: "鼻翼外缘中点旁开0.5寸，鼻唇沟中", eff: "宣通鼻窍、主治鼻塞流涕" }
+        { type:'eye', name: "攒竹", index: 55, loc: "眉头凹陷处", eff: "缓解眼睑瞤动、消除视疲劳" },
+        { type:'eye', name: "鱼腰", index: 52, loc: "眉毛正中点", eff: "缓解目赤肿痛、眼部胀痛" },
+        { type:'eye', name: "四白", index: 101, loc: "瞳孔直下眶下孔凹陷处", eff: "改善黑眼圈、疏风明目" },
+        { type:'head', name: "太阳穴", index: 21, loc: "眉梢与目外眦之间向后一寸", eff: "缓解偏头痛、清脑明目" },
+        { type:'head', name: "神庭", index: 10, loc: "前发际正中直上0.5寸", eff: "宁神醒脑、缓解眩晕" },
+        { type:'head', name: "印堂", index: 9, loc: "两眉头连线中点", eff: "安神定惊、缓解前额痛" },
+        { type:'sleep', name: "安眠点", index: 153, loc: "耳后凹陷与枕骨下缘附近", eff: "宁心安神、辅助改善睡眠" },
+        { type:'neck', name: "肩井", isPose: true, index: 11, loc: "大椎与肩峰连线中点", eff: "主治肩背痹痛、项强" }
     ];
 
-    function logTerminal(msg) {
-        const t = document.getElementById('terminal');
-        t.innerHTML += `> ${msg}<br>`;
-        if(t.innerHTML.split('<br>').length > 8) t.innerHTML = t.innerHTML.split('<br>').slice(-8).join('<br>');
-    }
-
-    function selectSymptom(type, btn) {
+    function selectSymptom(type, btn, event) {
+        event.stopPropagation(); // 防止触发body隐藏逻辑
         selectedType = type;
         document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
+        hideCard();
+    }
+
+    function handleGlobalClick(event) {
+        // 点击空白处隐藏卡片
+        if (!document.getElementById('detail-card').contains(event.target)) {
+            hideCard();
+        }
+    }
+
+    function hideCard() {
         document.getElementById('detail-card').classList.remove('show');
-        logTerminal(`SYSTEM: ${type.toUpperCase()}_SCAN_ACTIVE`);
     }
 
     function onResults(results) {
@@ -155,11 +160,9 @@
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
-        // 绘制底层扫描网格
         if (results.faceLandmarks) {
             drawCyberGrid(results.faceLandmarks);
             
-            // 过滤并绘制对应穴位
             ACUPOINTS.forEach(p => {
                 let lm = null;
                 if (p.isPose && results.poseLandmarks) {
@@ -179,10 +182,9 @@
 
     function drawCyberGrid(landmarks) {
         canvasCtx.beginPath();
-        canvasCtx.strokeStyle = "rgba(174, 227, 27, 0.2)";
+        canvasCtx.strokeStyle = "rgba(174, 227, 27, 0.25)";
         canvasCtx.lineWidth = 0.5;
-        const faceOval = [10, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 10];
-        faceOval.forEach((idx, i) => {
+        [10, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 10].forEach((idx, i) => {
             const p = landmarks[idx];
             if(i === 0) canvasCtx.moveTo(p.x * canvasElement.width, p.y * canvasElement.height);
             else canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height);
@@ -196,42 +198,39 @@
         const time = Date.now() / 1000;
 
         if (active) {
-            // 绘制交互动效
             canvasCtx.beginPath();
-            canvasCtx.arc(x, y, 10 + (time % 1) * 15, 0, Math.PI * 2);
+            canvasCtx.arc(x, y, 10 + (time % 1) * 12, 0, Math.PI * 2);
             canvasCtx.strokeStyle = `rgba(174, 227, 27, ${1 - (time % 1)})`;
             canvasCtx.stroke();
-            
             canvasCtx.fillStyle = THEME_COLOR;
-            canvasCtx.shadowBlur = 15;
-            canvasCtx.shadowColor = THEME_COLOR;
         } else {
             canvasCtx.fillStyle = "rgba(255,255,255,0.2)";
-            canvasCtx.shadowBlur = 0;
         }
 
         canvasCtx.beginPath();
-        canvasCtx.arc(x, y, active ? 7 : 3, 0, Math.PI * 2);
+        canvasCtx.arc(x, y, active ? 6 : 2.5, 0, Math.PI * 2);
         canvasCtx.fill();
 
         if (active) {
-            // 镜像补偿文字
             canvasCtx.save();
             canvasCtx.translate(x, y);
             canvasCtx.scale(-1, 1);
-            canvasCtx.fillStyle = "#fff";
-            canvasCtx.font = "bold 15px Arial";
-            canvasCtx.fillText(data.name, 15, 5);
+            canvasCtx.fillStyle = "white";
+            canvasCtx.font = "bold 14px Arial";
+            canvasCtx.fillText(data.name, 12, 5);
             canvasCtx.restore();
         }
     }
 
-    // 核心判定：修复镜像点击映射
+    // 交互核心：增加“最近点优先”逻辑，彻底修复误触
     canvasElement.addEventListener('click', (e) => {
         if (!lastResults) return;
         const rect = canvasElement.getBoundingClientRect();
-        const clickX = 1 - (e.clientX - rect.left) / rect.width; // 翻转点击坐标
+        const clickX = 1 - (e.clientX - rect.left) / rect.width;
         const clickY = (e.clientY - rect.top) / rect.height;
+
+        let closestPoint = null;
+        let minDistance = 0.025; // 进一步缩小点击半径，提升精度
 
         ACUPOINTS.forEach(p => {
             let lm = null;
@@ -240,37 +239,39 @@
 
             if (lm) {
                 const dist = Math.hypot(clickX - lm.x, (clickY - lm.y) * (rect.height / rect.width));
-                if (dist < 0.04) {
-                    showDetail(p);
-                    logTerminal(`DATA_MATCHED: ${p.name}`);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestPoint = p;
                 }
             }
         });
+
+        if (closestPoint) {
+            showDetail(closestPoint);
+            e.stopPropagation();
+        } else {
+            hideCard();
+        }
     });
 
     function showDetail(p) {
         document.getElementById('p-name').innerText = p.name;
         document.getElementById('p-loc').innerText = p.loc;
-        // 根据当前选中的模式动态匹配建议，若重置模式则显示通用建议
-        const currentAdvise = (selectedType !== 'reset' && SYMPTOMS[selectedType].points.includes(p.name)) 
-                             ? SYMPTOMS[selectedType].advise 
-                             : "建议：每日按揉该穴位2-3次，力度以感酸胀为度。";
-        document.getElementById('p-eff').innerText = p.eff + "。" + currentAdvise;
+        const modeAdvise = (selectedType !== 'reset' && SYMPTOMS[selectedType].points.includes(p.name))
+                           ? SYMPTOMS[selectedType].advise 
+                           : "建议：每日点按2-3次，力度以微酸胀感为宜。";
+        document.getElementById('p-eff').innerText = p.eff + "。" + modeAdvise;
         document.getElementById('detail-card').classList.add('show');
     }
 
     const holistic = new Holistic({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}` });
-    holistic.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6 });
+    holistic.setOptions({ modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
     holistic.onResults(onResults);
 
-    const camera = new Camera(videoElement, {
+    new Camera(videoElement, {
         onFrame: async () => { await holistic.send({image: videoElement}); },
         width: 1280, height: 720
-    });
-    camera.start();
-
-    logTerminal("AI_CORE_LOADED");
-    logTerminal("BIOMETRIC_SYNC_SUCCESS");
+    }).start();
 </script>
 </body>
 </html>
