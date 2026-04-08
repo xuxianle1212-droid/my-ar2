@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>拍一拍 - AI中医全息交互终端</title>
+    <!-- 引入 MediaPipe 核心库 -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <style>
@@ -11,7 +12,6 @@
             --neon: #AEE31B;
             --glass: rgba(238, 253, 224, 0.12);
             --bg-blur: blur(12px);
-            --accent: #58cc02;
         }
 
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', 'PingFang SC', sans-serif; color: white; }
@@ -24,37 +24,32 @@
         }
         .header h1 { margin: 0; letter-spacing: 15px; font-weight: 200; font-size: 30px; color: var(--neon); text-shadow: 0 0 20px var(--neon); }
 
-        /* 右侧病症选择面板 - 按照图片比例排列 */
+        /* 右侧面板 */
         .symptom-panel {
-            position: absolute; right: 25px; top: 100px; width: 220px;
+            position: absolute; right: 25px; top: 100px; width: 200px;
             z-index: 110; display: flex; flex-direction: column; gap: 10px;
         }
         .panel-label { color: var(--neon); font-size: 10px; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.8; }
         
         .symptom-btn {
             position: relative; background: var(--glass); backdrop-filter: var(--bg-blur);
-            border: 1px solid rgba(174, 227, 27, 0.2); padding: 12px 15px;
-            border-radius: 8px; cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden; font-size: 14px; color: #EEFDE0;
+            border: 1px solid rgba(174, 227, 27, 0.2); padding: 14px 18px;
+            border-radius: 8px; cursor: pointer; transition: all 0.4s;
+            overflow: hidden; font-size: 15px; color: #EEFDE0;
         }
-        /* 比例进度条背景 */
+        /* 比例背景条 (通过变量控制长度) */
         .symptom-btn::before {
             content: ''; position: absolute; left: 0; top: 0; height: 100%; 
-            background: rgba(174, 227, 27, 0.1); z-index: -1; transition: width 1s;
+            background: rgba(174, 227, 27, 0.15); z-index: -1; width: var(--w);
         }
         .symptom-btn:hover { border-color: var(--neon); transform: translateX(-8px); background: rgba(174, 227, 27, 0.1); }
         .symptom-btn.active { border-color: var(--neon); box-shadow: 0 0 15px rgba(174, 227, 27, 0.4); background: rgba(174, 227, 27, 0.2); }
-        .symptom-btn.active .btn-percent { color: var(--neon); font-weight: bold; }
 
-        .btn-info { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
-        .btn-percent { font-size: 10px; opacity: 0.6; font-family: monospace; }
-
-        /* 左侧诊断数据流 */
+        /* 左侧终端 */
         .terminal {
-            position: absolute; left: 25px; top: 100px; width: 240px; height: 300px;
+            position: absolute; left: 25px; top: 100px; width: 240px; height: 200px;
             font-family: 'Courier New', monospace; font-size: 11px; color: var(--neon);
             pointer-events: none; opacity: 0.8; overflow: hidden;
-            mask-image: linear-gradient(to bottom, black 80%, transparent);
         }
 
         /* 详情卡片 */
@@ -63,14 +58,14 @@
             width: 420px; background: rgba(5, 15, 5, 0.9); border: 1px solid var(--neon);
             padding: 25px; border-radius: 20px; backdrop-filter: blur(20px);
             transition: all 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 200;
-            box-shadow: 0 0 40px rgba(0,0,0,0.5);
         }
         #detail-card.show { transform: translateX(-50%) translateY(0); }
         .card-title { color: var(--neon); font-size: 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
-        .card-title::before { content: ''; width: 4px; height: 24px; background: var(--neon); box-shadow: 0 0 10px var(--neon); }
-        .card-body { font-size: 15px; line-height: 1.7; color: #e0e0e0; }
+        .card-title::before { content: ''; width: 4px; height: 24px; background: var(--neon); }
 
-        #output_canvas { transform: scaleX(-1); width: 100vw; height: 100vh; object-fit: cover; }
+        /* 画布容器 */
+        #canvas-container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        #output_canvas { transform: scaleX(-1); max-width: 100%; max-height: 100%; object-fit: cover; }
         #input_video { display: none; }
         
         .scanning-overlay {
@@ -88,26 +83,14 @@
 <div class="scanning-overlay"></div>
 
 <div class="symptom-panel">
-    <div class="panel-label">HEALTH_ANALYTICS</div>
-    <!-- 按比例从大到小排列 -->
-    <div class="symptom-btn" onclick="selectSymptom('neck', this)" style="--w: 81.8%">
-        <div class="btn-info"><span>肩颈僵硬酸痛</span> <span class="btn-percent">81.8%</span></div>
-    </div>
-    <div class="symptom-btn" onclick="selectSymptom('eye', this)" style="--w: 63.6%">
-        <div class="btn-info"><span>眼部干涩疲劳</span> <span class="btn-percent">63.6%</span></div>
-    </div>
-    <div class="symptom-btn" onclick="selectSymptom('head', this)" style="--w: 27.2%">
-        <div class="btn-info"><span>头部偏痛沉重</span> <span class="btn-percent">27.2%</span></div>
-    </div>
-    <div class="symptom-btn" onclick="selectSymptom('nose', this)" style="--w: 18.1%">
-        <div class="btn-info"><span>呼吸鼻塞不适</span> <span class="btn-percent:">18.1%</span></div>
-    </div>
-    <div class="symptom-btn" onclick="selectSymptom('face', this)" style="--w: 5%">
-        <div class="btn-info"><span>面部肌肉塑形</span> <span class="btn-percent">0%</span></div>
-    </div>
-    <div class="symptom-btn" onclick="selectSymptom('reset', this)" style="margin-top:20px; border-style:dashed; opacity:0.6;">
-        <div class="btn-info"><span>重置全屏扫描</span></div>
-    </div>
+    <div class="panel-label">HEALTH_DIAGNOSIS</div>
+    <!-- 按照图片比例：肩颈(81.8%) > 眼部(63.6%) > 头部(27.2%) > 呼吸(18.1%) > 面部(0%) -->
+    <div class="symptom-btn" onclick="selectSymptom('neck', this)" style="--w: 81.8%">肩颈僵硬酸痛</div>
+    <div class="symptom-btn" onclick="selectSymptom('eye', this)" style="--w: 63.6%">眼部干涩疲劳</div>
+    <div class="symptom-btn" onclick="selectSymptom('head', this)" style="--w: 27.2%">头部偏痛沉重</div>
+    <div class="symptom-btn" onclick="selectSymptom('nose', this)" style="--w: 18.1%">呼吸鼻塞不适</div>
+    <div class="symptom-btn" onclick="selectSymptom('face', this)" style="--w: 5%">面部肌肉塑形</div>
+    <div class="symptom-btn" onclick="selectSymptom('reset', this)" style="margin-top:20px; border-style:dashed; --w:0%">重置全屏识别</div>
 </div>
 
 <div class="terminal" id="terminal"></div>
@@ -120,38 +103,32 @@
     </div>
 </div>
 
-<video id="input_video" playsinline></video>
-<canvas id="output_canvas"></canvas>
+<div id="canvas-container">
+    <video id="input_video" playsinline></video>
+    <canvas id="output_canvas"></canvas>
+</div>
 
 <script>
-    // 初始化按钮背景宽度
-    document.querySelectorAll('.symptom-btn').forEach(btn => {
-        const width = btn.getAttribute('style')?.match(/--w: ([\d.]+)%/)?.[1] || 0;
-        btn.style.setProperty('--w-val', width + '%');
-        const style = document.createElement('style');
-        style.innerHTML = `.symptom-btn[style*="--w: ${width}%"]::before { width: ${width}%; }`;
-        document.head.appendChild(style);
-    });
-
     const videoElement = document.getElementById('input_video');
     const canvasElement = document.getElementById('output_canvas');
     const canvasCtx = canvasElement.getContext('2d');
+    const NEON_COLOR = "#AEE31B"; // 定义JS常量，避免使用CSS变量报错
     
     let selectedType = 'reset';
     let lastResults = null;
 
     const SYMPTOMS = {
-        'neck': { points: ['肩井'], advise: '建议：使用对侧手掌按揉肩井穴，配合颈部左右拉伸。' },
+        'neck': { points: ['肩井'], advise: '建议：使用对侧手掌点按肩井穴，配合颈部旋转。' },
         'eye': { points: ['攒竹', '鱼腰', '四白'], advise: '建议：指腹轻压，每次3分钟，注意避开眼球。' },
-        'head': { points: ['太阳穴', '印堂', '神庭'], advise: '建议：由印堂推向神庭，再点按太阳穴，缓解胀痛。' },
+        'head': { points: ['太阳穴', '印堂', '神庭'], advise: '建议：点按太阳穴时顺时针揉动，力度微酸为宜。' },
         'nose': { points: ['迎香穴', '印堂'], advise: '建议：双手食指搓热后摩擦鼻翼两侧迎香穴。' },
-        'face': { points: ['地仓穴', '颊车穴', '巨髎'], advise: '建议：配合提拉手法，每日坚持可紧致轮廓。' },
+        'face': { points: ['地仓穴', '颊车穴', '巨髎'], advise: '建议：配合向上提拉手法，有助于紧致轮廓。' },
         'reset': { points: [], advise: '' }
     };
 
     const ACUPOINTS = [
-        { type:'neck', name: "肩井", isPose: true, index: 11, loc: "大椎与肩峰连线中点", eff: "缓解肩背沉重、颈项僵硬" }, // 使用pose landmark
-        { type:'eye', name: "攒竹", index: 55, loc: "眉头凹陷处", eff: "消除视疲劳、明目" },
+        { type:'neck', name: "肩井", isPose: true, index: 11, loc: "大椎与肩峰连线中点", eff: "缓解肩背沉重" },
+        { type:'eye', name: "攒竹", index: 55, loc: "眉头凹陷处", eff: "消除视疲劳" },
         { type:'eye', name: "鱼腰", index: 52, loc: "眉毛中心", eff: "缓解眼部肿痛" },
         { type:'eye', name: "四白", index: 101, loc: "瞳孔直下眶下孔", eff: "改善黑眼圈" },
         { type:'head', name: "太阳穴", index: 21, loc: "眉尾外侧凹陷", eff: "缓解头痛、清脑" },
@@ -164,11 +141,8 @@
 
     function logTerminal(msg) {
         const t = document.getElementById('terminal');
-        const line = document.createElement('div');
-        line.innerHTML = `> ${msg}`;
-        t.appendChild(line);
-        if(t.childNodes.length > 15) t.removeChild(t.firstChild);
-        t.scrollTop = t.scrollHeight;
+        t.innerHTML += `> ${msg}<br>`;
+        if(t.innerHTML.split('<br>').length > 10) t.innerHTML = t.innerHTML.split('<br>').slice(-10).join('<br>');
     }
 
     function selectSymptom(type, btn) {
@@ -176,20 +150,24 @@
         document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
         document.getElementById('detail-card').classList.remove('show');
-        logTerminal(`切换模式: ${type.toUpperCase()}`);
-        logTerminal(`调取数据... OK`);
+        logTerminal(`TARGET_MODE: ${type.toUpperCase()}`);
     }
 
     function onResults(results) {
         lastResults = results;
-        canvasElement.width = videoElement.videoWidth;
-        canvasElement.height = videoElement.videoHeight;
+        // 动态适配画布大小
+        if (canvasElement.width !== videoElement.videoWidth) {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+        }
         
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        
+        // 绘制视频帧
         canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
-        // 绘制面部网格
+        // 绘制面部科技网格
         if (results.faceLandmarks) {
             drawCyberGrid(results.faceLandmarks);
         }
@@ -231,47 +209,42 @@
         const time = Date.now() / 1000;
 
         if (active) {
-            // 涟漪
-            const radius = 8 + (time % 1) * 25;
+            // 涟漪动画
+            const radius = 8 + (time % 1) * 20;
             canvasCtx.beginPath();
             canvasCtx.arc(x, y, radius, 0, Math.PI * 2);
             canvasCtx.strokeStyle = `rgba(174, 227, 27, ${1 - (time % 1)})`;
             canvasCtx.stroke();
             
-            canvasCtx.fillStyle = var(--neon);
-            canvasCtx.shadowBlur = 10;
-            canvasCtx.shadowColor = var(--neon);
+            canvasCtx.fillStyle = NEON_COLOR;
         } else {
             canvasCtx.fillStyle = "rgba(255,255,255,0.3)";
-            canvasCtx.shadowBlur = 0;
         }
 
         canvasCtx.beginPath();
-        canvasCtx.arc(x, y, active ? 5 : 2, 0, Math.PI * 2);
+        canvasCtx.arc(x, y, active ? 6 : 3, 0, Math.PI * 2);
         canvasCtx.fill();
 
-        // 镜像文字修复
         if (active) {
+            // 镜像文字反转修复
             canvasCtx.save();
             canvasCtx.translate(x, y);
             canvasCtx.scale(-1, 1);
             canvasCtx.fillStyle = "white";
-            canvasCtx.font = "bold 13px Arial";
+            canvasCtx.font = "bold 14px Arial";
             canvasCtx.fillText(data.name, 12, 5);
             canvasCtx.restore();
         }
     }
 
-    // 技术Bug修复：修正镜像后的点击坐标逻辑
+    // 交互逻辑：由于画布镜像，需要反转点击X坐标
     canvasElement.addEventListener('click', (e) => {
         if (!lastResults) return;
         const rect = canvasElement.getBoundingClientRect();
-        
-        // 核心修正：由于CSS scaleX(-1)，点击位置相对于画布左侧的距离其实是原始坐标相对于右侧的距离
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
         
-        // 将屏幕坐标映射到 0-1 范围，并翻转 X
+        // 关键修复：反转点击的 X 轴以匹配 scaleX(-1)
         const normalizedX = 1 - (mouseX / rect.width);
         const normalizedY = mouseY / rect.height;
 
@@ -282,37 +255,40 @@
 
             if (lm) {
                 const dist = Math.hypot(normalizedX - lm.x, (normalizedY - lm.y) * (rect.height/rect.width));
-                if (dist < 0.03) {
+                if (dist < 0.04) {
                     showCard(p);
-                    logTerminal(`检测到交互: ${p.name}`);
                 }
             }
         });
     });
 
     function showCard(p) {
-        const card = document.getElementById('detail-card');
         document.getElementById('p-name').innerText = p.name;
         document.getElementById('p-loc').innerText = p.loc;
-        const advise = SYMPTOMS[selectedType]?.advise || "建议：保持呼吸平稳，力度适中点按。";
+        const advise = SYMPTOMS[selectedType]?.advise || "建议：每日点按2-3次，力度微酸。";
         document.getElementById('p-eff').innerText = p.eff + "。" + advise;
-        card.classList.add('show');
+        document.getElementById('detail-card').classList.add('show');
     }
 
-    // 初始化模型
+    // 初始化相机与模型
     const holistic = new Holistic({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}` });
-    holistic.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5 });
+    holistic.setOptions({ modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
     holistic.onResults(onResults);
 
     const camera = new Camera(videoElement, {
         onFrame: async () => { await holistic.send({image: videoElement}); },
         width: 1280, height: 720
     });
-    camera.start();
 
-    logTerminal("系统初始化...");
-    logTerminal("神经网络就绪...");
-    logTerminal("等待生物特征录入...");
+    // 启动提示
+    logTerminal("INITIALIZING_CAMERA...");
+    camera.start().then(() => {
+        logTerminal("CAMERA_READY...");
+        logTerminal("NEURAL_NETWORK_ACTIVE...");
+    }).catch(err => {
+        logTerminal("ERROR: CAMERA_ACCESS_DENIED");
+        alert("请允许摄像头访问权限以进行AI识别");
+    });
 </script>
 </body>
 </html>
