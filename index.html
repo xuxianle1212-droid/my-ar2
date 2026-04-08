@@ -108,11 +108,11 @@
         { category:['head','sleep'], name: "百会", index: 10, loc: "头顶正中（前发际正中直上）", method: "中指垂直按压+缓慢放松，1分钟", eff: "提神醒脑、缓解头晕；调节神经，改善睡眠" },
         { category:['sleep','head'], name: "印堂", index: 9, loc: "两眉中间", method: "食指轻按+顺时针打圈1分钟", eff: "安神、缓解焦虑、帮助入睡" },
         
-        // 颈部点位物理间距重排：132(风池)-高, 127(安眠)-侧, 172(天柱)-中, 152(颈夹脊)-低
+        // 颈部点位深度优化：风池(132-最高), 安眠(127-侧位), 天柱(152-显著下移中位), 颈夹脊(148-最底位)
         { category:['eye','head','sleep','neck'], name: "风池", index: 132, loc: "后颈发际线两侧凹陷处（侧影投影）", method: "双手拇指向内上方顶按1分钟", eff: "改善眼干、头晕、通络止痛" },
         { category:['sleep'], name: "安眠", index: 127, loc: "耳垂后方的骨头（乳突）与后颈风池穴之间的中点，偏上约一指处的凹陷", method: "食指或拇指轻按+慢揉1–2分钟", eff: "助眠核心穴，缓解失眠、多梦" },
-        { category:['head','neck'], name: "天柱", index: 172, align: "left", isNeck: true, loc: "后颈部发际线处，颈椎两侧大筋（斜方肌外缘）外侧约一指的凹陷", method: "拇指向上推按1分钟", eff: "缓解头重、颈紧引起的头痛" },
-        { category:['neck'], name: "颈夹脊穴", index: 152, isNeck: true, loc: "颈椎（后颈正中骨头）两侧，各旁开约一指（0.5–1寸）的一条纵向穴位带", method: "双手食中指并拢，沿颈椎两侧上下推揉1分钟", eff: "缓解颈部僵硬，改善上肢麻木" }
+        { category:['head','neck'], name: "天柱", index: 152, align: "left", isNeck: true, loc: "后颈部发际线处，颈椎两侧大筋（斜方肌外缘）外侧约一指的凹陷", method: "拇指向上推按1分钟", eff: "缓解头重、颈紧引起的头痛" },
+        { category:['neck'], name: "颈夹脊穴", index: 148, isNeck: true, loc: "颈椎（后颈正中骨头）两侧，各旁开约一指（0.5–1寸）的一条纵向穴位带", method: "双手食中指并拢，沿颈椎两侧上下推揉1分钟", eff: "缓解颈部僵硬，改善上肢麻木" }
     ];
 
     function selectSymptom(type, btn, event) {
@@ -188,7 +188,6 @@
         }
     }
 
-    // 交互逻辑：使用最近邻算法，专门为颈部边缘点提供灵敏度
     canvasElement.addEventListener('click', (e) => {
         if (!lastResults || !lastResults.faceLandmarks) return;
         e.stopPropagation();
@@ -203,7 +202,6 @@
             const lm = lastResults.faceLandmarks[p.index];
             if (lm) {
                 const dist = Math.hypot(clickX - lm.x, (clickY - lm.y) * (rect.height/rect.width));
-                // 为颈部穴位设定更合理的感应阈值 (0.04)，面部为 0.025
                 const threshold = p.isNeck ? 0.045 : 0.025;
                 
                 if (dist < threshold && dist < minDistance) {
