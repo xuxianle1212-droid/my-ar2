@@ -9,11 +9,11 @@
     <style>
         :root {
             --neon: #AEE31B;
-            --panel-bg: rgba(0, 0, 0, 0.75); /* 加深背景，确保文字清晰 */
-            --glass: rgba(174, 227, 27, 0.1);
+            --glass-dark: rgba(0, 15, 5, 0.85); /* 显著加深的底色 */
+            --bg-blur: blur(15px);
         }
 
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; color: white; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', 'PingFang SC', sans-serif; color: white; }
 
         /* 顶部标题 */
         .header { 
@@ -21,27 +21,256 @@
             background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
             display: flex; justify-content: center; align-items: center; z-index: 100;
         }
-        .header h1 { margin: 0; letter-spacing: 12px; font-weight: 200; font-size: 28px; color: var(--neon); text-shadow: 0 0 15px var(--neon); }
+        .header h1 { margin: 0; letter-spacing: 15px; font-weight: 200; font-size: 30px; color: var(--neon); text-shadow: 0 0 15px var(--neon); }
 
         /* 右侧面板 - 增强对比度 */
         .symptom-panel {
-            position: absolute; right: 25px; top: 110px; width: 210px;
+            position: absolute; right: 25px; top: 110px; width: 220px;
             z-index: 110; display: flex; flex-direction: column; gap: 12px;
         }
-        .panel-label { color: var(--neon); font-size: 11px; letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        .panel-label { color: var(--neon); font-size: 11px; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.9; text-shadow: 0 0 5px #000; }
         
         .symptom-btn {
-            background: var(--panel-bg);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(174, 227, 27, 0.4); 
-            padding: 16px 20px;
+            background: var(--glass-dark); backdrop-filter: var(--bg-blur);
+            border: 1px solid rgba(174, 227, 27, 0.4); padding: 16px;
             border-radius: 10px; cursor: pointer; transition: all 0.3s;
-            font-size: 16px; color: #fff; font-weight: 500;
-            text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            font-size: 16px; color: #fff; text-align: center;
+            text-shadow: 0 1px 4px rgba(0,0,0,1); /* 文字阴影确保清晰 */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         .symptom-btn:hover { border-color: var(--neon); background: rgba(174, 227, 27, 0.15); transform: translateX(-5px); }
-        .symptom-btn.active { border-color: var(--neon); background: rgba(174, 227, 27, 0.25); box-shadow: 0 0 20px rgba(174, 227, 27, 0.3); }
+        .symptom-btn.active { background: var(--neon); color: #000; font-weight: bold; text-shadow: none; box-shadow: 0 0 20px var(--neon); }
 
-        /* 左侧终端数据流 */
+        /* 左侧终端数据 */
         .terminal {
             position: absolute; left: 25px; top: 110px; width: 240px;
+            font-family: 'Courier New', monospace; font-size: 11px; color: var(--neon);
+            pointer-events: none; text-shadow: 0 0 5px #000;
+        }
+
+        /* 详情卡片 */
+        #detail-card {
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%) translateY(200%);
+            width: 440px; background: rgba(0, 10, 5, 0.95); border: 1px solid var(--neon);
+            padding: 25px; border-radius: 20px; backdrop-filter: blur(20px);
+            transition: all 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 200;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+        #detail-card.show { transform: translateX(-50%) translateY(0); }
+        .card-title { color: var(--neon); font-size: 26px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+        .card-title::before { content: ''; width: 5px; height: 26px; background: var(--neon); }
+        .card-body { font-size: 16px; line-height: 1.7; color: #eee; }
+
+        /* 画布 */
+        #output_canvas { transform: scaleX(-1); width: 100vw; height: 100vh; object-fit: cover; }
+        #input_video { display: none; }
+        
+        .scanning-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(174, 227, 27, 0.05) 0%, transparent 50%, rgba(174, 227, 27, 0.05) 100%);
+            background-size: 100% 8px; animation: scan-anim 6s linear infinite;
+            pointer-events: none; z-index: 50;
+        }
+        @keyframes scan-anim { from { background-position: 0 0; } to { background-position: 0 100%; } }
+    </style>
+</head>
+<body>
+
+<div class="header"><h1>拍一拍</h1></div>
+<div class="scanning-overlay"></div>
+
+<!-- 仅保留四个最核心选项 -->
+<div class="symptom-panel">
+    <div class="panel-label">CORE_THERAPY_MODES</div>
+    <div class="symptom-btn" onclick="selectSymptom('neck', this)">肩颈僵硬缓解</div>
+    <div class="symptom-btn" onclick="selectSymptom('eye', this)">消除眼部疲劳</div>
+    <div class="symptom-btn" onclick="selectSymptom('head', this)">缓解偏头胀痛</div>
+    <div class="symptom-btn" onclick="selectSymptom('nose', this)">感冒通鼻舒络</div>
+    <div class="symptom-btn" onclick="selectSymptom('reset', this)" style="margin-top:20px; border-style:dashed; opacity:0.8; font-size:14px;">重置全屏扫描</div>
+</div>
+
+<div class="terminal" id="terminal"></div>
+
+<div id="detail-card">
+    <div class="card-title" id="p-name">穴位名称</div>
+    <div class="card-body">
+        <div style="margin-bottom:12px;"><b style="color:var(--neon)">[ 导引定位 ]</b> <span id="p-loc"></span></div>
+        <div><b style="color:var(--neon)">[ 智慧建议 ]</b> <span id="p-eff"></span></div>
+    </div>
+</div>
+
+<video id="input_video" playsinline></video>
+<canvas id="output_canvas"></canvas>
+
+<script>
+    const videoElement = document.getElementById('input_video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const THEME_COLOR = "#AEE31B"; 
+    
+    let selectedType = 'reset';
+    let lastResults = null;
+
+    // 严谨校对后的分类映射
+    const SYMPTOMS = {
+        'neck': { points: ['肩井'], advise: '建议：掌心向下，用中指点揉肩井穴，配合缓慢转颈。' },
+        'eye': { points: ['攒竹', '鱼腰', '四白'], advise: '建议：闭目，用食指关节轻揉，每次持续3-5分钟。' },
+        'head': { points: ['太阳穴', '印堂', '神庭'], advise: '建议：由印堂穴向上推至神庭穴，再顺时针揉动太阳穴。' },
+        'nose': { points: ['迎香穴', '印堂'], advise: '建议：按压迎香穴至有酸胀感，有助于快速宣通鼻窍。' },
+        'reset': { points: [], advise: '' }
+    };
+
+    // 严谨校对后的穴位库
+    const ACUPOINTS = [
+        { type:'neck', name: "肩井", isPose: true, index: 11, loc: "肩背最高处，大椎与肩峰连线中点", eff: "缓解肩颈僵硬、改善落枕" },
+        { type:'eye', name: "攒竹", index: 55, loc: "面部眉头凹陷中", eff: "缓解眼睑瞤动、消除视疲劳" },
+        { type:'eye', name: "鱼腰", index: 52, loc: "眉毛正中，瞳孔直上", eff: "缓解目赤肿痛、眼部胀痛" },
+        { type:'eye', name: "四白", index: 101, loc: "目正视，瞳孔直下眶下孔凹陷处", eff: "疏风明目、改善眼周循环" },
+        { type:'head', name: "太阳穴", index: 21, loc: "眉梢与目外眦之间向后约一横指处", eff: "清肝明目、缓解顽固性头痛" },
+        { type:'head', name: "印堂", index: 9, loc: "两眉头连线的中点", eff: "安神定惊、缓解前额痛" },
+        { type:'head', name: "神庭", index: 10, loc: "前发际正中直上0.5寸", eff: "宁神醒脑、改善头晕不适" },
+        { type:'nose', name: "迎香穴", index: 129, loc: "鼻翼外缘中点旁开0.5寸，鼻唇沟中", eff: "宣通鼻窍、主治鼻塞流涕" }
+    ];
+
+    function logTerminal(msg) {
+        const t = document.getElementById('terminal');
+        t.innerHTML += `> ${msg}<br>`;
+        if(t.innerHTML.split('<br>').length > 8) t.innerHTML = t.innerHTML.split('<br>').slice(-8).join('<br>');
+    }
+
+    function selectSymptom(type, btn) {
+        selectedType = type;
+        document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+        document.getElementById('detail-card').classList.remove('show');
+        logTerminal(`SYSTEM: ${type.toUpperCase()}_SCAN_ACTIVE`);
+    }
+
+    function onResults(results) {
+        lastResults = results;
+        canvasElement.width = videoElement.videoWidth;
+        canvasElement.height = videoElement.videoHeight;
+        
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+        // 绘制底层扫描网格
+        if (results.faceLandmarks) {
+            drawCyberGrid(results.faceLandmarks);
+            
+            // 过滤并绘制对应穴位
+            ACUPOINTS.forEach(p => {
+                let lm = null;
+                if (p.isPose && results.poseLandmarks) {
+                    lm = results.poseLandmarks[p.index];
+                } else if (!p.isPose && results.faceLandmarks) {
+                    lm = results.faceLandmarks[p.index];
+                }
+
+                if (lm) {
+                    const isActive = selectedType === 'reset' || SYMPTOMS[selectedType].points.includes(p.name);
+                    drawPoint(lm, p, isActive);
+                }
+            });
+        }
+        canvasCtx.restore();
+    }
+
+    function drawCyberGrid(landmarks) {
+        canvasCtx.beginPath();
+        canvasCtx.strokeStyle = "rgba(174, 227, 27, 0.2)";
+        canvasCtx.lineWidth = 0.5;
+        const faceOval = [10, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 10];
+        faceOval.forEach((idx, i) => {
+            const p = landmarks[idx];
+            if(i === 0) canvasCtx.moveTo(p.x * canvasElement.width, p.y * canvasElement.height);
+            else canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height);
+        });
+        canvasCtx.stroke();
+    }
+
+    function drawPoint(lm, data, active) {
+        const x = lm.x * canvasElement.width;
+        const y = lm.y * canvasElement.height;
+        const time = Date.now() / 1000;
+
+        if (active) {
+            // 绘制交互动效
+            canvasCtx.beginPath();
+            canvasCtx.arc(x, y, 10 + (time % 1) * 15, 0, Math.PI * 2);
+            canvasCtx.strokeStyle = `rgba(174, 227, 27, ${1 - (time % 1)})`;
+            canvasCtx.stroke();
+            
+            canvasCtx.fillStyle = THEME_COLOR;
+            canvasCtx.shadowBlur = 15;
+            canvasCtx.shadowColor = THEME_COLOR;
+        } else {
+            canvasCtx.fillStyle = "rgba(255,255,255,0.2)";
+            canvasCtx.shadowBlur = 0;
+        }
+
+        canvasCtx.beginPath();
+        canvasCtx.arc(x, y, active ? 7 : 3, 0, Math.PI * 2);
+        canvasCtx.fill();
+
+        if (active) {
+            // 镜像补偿文字
+            canvasCtx.save();
+            canvasCtx.translate(x, y);
+            canvasCtx.scale(-1, 1);
+            canvasCtx.fillStyle = "#fff";
+            canvasCtx.font = "bold 15px Arial";
+            canvasCtx.fillText(data.name, 15, 5);
+            canvasCtx.restore();
+        }
+    }
+
+    // 核心判定：修复镜像点击映射
+    canvasElement.addEventListener('click', (e) => {
+        if (!lastResults) return;
+        const rect = canvasElement.getBoundingClientRect();
+        const clickX = 1 - (e.clientX - rect.left) / rect.width; // 翻转点击坐标
+        const clickY = (e.clientY - rect.top) / rect.height;
+
+        ACUPOINTS.forEach(p => {
+            let lm = null;
+            if (p.isPose && lastResults.poseLandmarks) lm = lastResults.poseLandmarks[p.index];
+            else if (!p.isPose && lastResults.faceLandmarks) lm = lastResults.faceLandmarks[p.index];
+
+            if (lm) {
+                const dist = Math.hypot(clickX - lm.x, (clickY - lm.y) * (rect.height / rect.width));
+                if (dist < 0.04) {
+                    showDetail(p);
+                    logTerminal(`DATA_MATCHED: ${p.name}`);
+                }
+            }
+        });
+    });
+
+    function showDetail(p) {
+        document.getElementById('p-name').innerText = p.name;
+        document.getElementById('p-loc').innerText = p.loc;
+        // 根据当前选中的模式动态匹配建议，若重置模式则显示通用建议
+        const currentAdvise = (selectedType !== 'reset' && SYMPTOMS[selectedType].points.includes(p.name)) 
+                             ? SYMPTOMS[selectedType].advise 
+                             : "建议：每日按揉该穴位2-3次，力度以感酸胀为度。";
+        document.getElementById('p-eff').innerText = p.eff + "。" + currentAdvise;
+        document.getElementById('detail-card').classList.add('show');
+    }
+
+    const holistic = new Holistic({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}` });
+    holistic.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6 });
+    holistic.onResults(onResults);
+
+    const camera = new Camera(videoElement, {
+        onFrame: async () => { await holistic.send({image: videoElement}); },
+        width: 1280, height: 720
+    });
+    camera.start();
+
+    logTerminal("AI_CORE_LOADED");
+    logTerminal("BIOMETRIC_SYNC_SUCCESS");
+</script>
+</body>
+</html>
