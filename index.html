@@ -9,94 +9,97 @@
     <style>
         :root {
             --neon: #AEE31B;
-            --glass-dark: rgba(0, 10, 5, 0.9);
-            --bg-blur: blur(15px);
+            --glass-dark: rgba(0, 8, 5, 0.95); /* 加深背景 */
+            --bg-blur: blur(20px);
         }
 
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', 'PingFang SC', sans-serif; color: white; }
 
         .header { 
             position: absolute; top: 0; width: 100%; height: 80px; 
-            background: linear-gradient(to bottom, rgba(0,0,0,1), transparent);
+            background: linear-gradient(to bottom, rgba(0,0,0,1) 40%, transparent);
             display: flex; justify-content: center; align-items: center; z-index: 100;
         }
         .header h1 { margin: 0; letter-spacing: 15px; font-weight: 200; font-size: 30px; color: var(--neon); text-shadow: 0 0 15px var(--neon); }
 
-        /* 右侧面板：加深对比，增强辨识度 */
+        /* 右侧面板 */
         .symptom-panel {
-            position: absolute; right: 25px; top: 110px; width: 260px;
+            position: absolute; right: 25px; top: 110px; width: 280px;
             z-index: 110; display: flex; flex-direction: column; gap: 12px;
         }
         .symptom-btn {
             background: var(--glass-dark); backdrop-filter: var(--bg-blur);
-            border: 1px solid rgba(174, 227, 27, 0.5); padding: 16px;
+            border: 1px solid rgba(174, 227, 27, 0.6); padding: 15px;
             border-radius: 12px; cursor: pointer; transition: all 0.3s;
-            font-size: 15px; color: #fff; line-height: 1.4;
-            text-shadow: 1px 1px 2px #000; /* 文字黑色描边 */
-            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            color: #fff; line-height: 1.5; box-shadow: 0 8px 32px rgba(0,0,0,0.8);
         }
-        .btn-title { color: var(--neon); font-weight: bold; margin-bottom: 4px; display: block; font-size: 16px; }
-        .symptom-btn:hover { border-color: var(--neon); transform: translateX(-5px); background: rgba(174, 227, 27, 0.1); }
+        .btn-title { color: var(--neon); font-weight: bold; display: block; font-size: 16px; margin-bottom: 3px; text-shadow: 1px 1px 2px #000; }
+        .btn-desc { font-size: 13px; opacity: 0.9; text-shadow: 1px 1px 1px #000; }
+        
+        .symptom-btn:hover { border-color: var(--neon); transform: translateX(-5px); }
         .symptom-btn.active { background: var(--neon); border-color: var(--neon); }
-        .symptom-btn.active .btn-title, .symptom-btn.active { color: #000; text-shadow: none; font-weight: bold; }
+        .symptom-btn.active .btn-title, .symptom-btn.active .btn-desc { color: #000; text-shadow: none; }
 
         /* 详情卡片 */
         #detail-card {
-            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%) translateY(250%);
-            width: 440px; background: rgba(0, 15, 5, 0.98); border: 2px solid var(--neon);
-            padding: 25px; border-radius: 20px; backdrop-filter: blur(25px);
+            position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(250%);
+            width: 460px; background: rgba(0, 15, 8, 0.98); border: 2px solid var(--neon);
+            padding: 28px; border-radius: 24px; backdrop-filter: blur(30px);
             transition: all 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.1); z-index: 200;
+            box-shadow: 0 0 60px rgba(0,0,0,0.9);
         }
         #detail-card.show { transform: translateX(-50%) translateY(0); }
-        .card-title { color: var(--neon); font-size: 26px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
-        .card-title::before { content: ''; width: 5px; height: 26px; background: var(--neon); }
-        .card-body { font-size: 16px; line-height: 1.7; color: #eee; }
+        .card-header { border-bottom: 1px solid rgba(174, 227, 27, 0.3); padding-bottom: 15px; margin-bottom: 15px; }
+        .card-title { color: var(--neon); font-size: 28px; font-weight: bold; display: flex; align-items: center; gap: 12px; }
+        .card-title::before { content: ''; width: 6px; height: 28px; background: var(--neon); }
+        .card-row { margin-bottom: 12px; font-size: 16px; line-height: 1.6; }
+        .row-label { color: var(--neon); font-weight: bold; margin-right: 8px; }
 
-        #output_canvas { transform: scaleX(-1); width: 100vw; height: 100vh; object-fit: cover; cursor: crosshair; }
+        #output_canvas { transform: scaleX(-1); width: 100vw; height: 100vh; object-fit: cover; }
         #input_video { display: none; }
         
-        /* 扫描动画 */
         .scanning-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(174, 227, 27, 0.05) 0%, transparent 50%, rgba(174, 227, 27, 0.05) 100%);
-            background-size: 100% 12px; animation: scan-anim 5s linear infinite;
+            background: linear-gradient(rgba(174, 227, 27, 0.04) 0%, transparent 50%, rgba(174, 227, 27, 0.04) 100%);
+            background-size: 100% 15px; animation: scan-anim 6s linear infinite;
             pointer-events: none; z-index: 50;
         }
         @keyframes scan-anim { from { background-position: 0 0; } to { background-position: 0 100%; } }
     </style>
 </head>
-<body onclick="handleGlobalClick(event)">
+<body onclick="hideCard()">
 
 <div class="header"><h1>拍一拍</h1></div>
 <div class="scanning-overlay"></div>
 
 <div class="symptom-panel" id="panel">
     <div class="symptom-btn" onclick="selectSymptom('eye', this, event)">
-        <span class="btn-title">眼部疲劳干涩</span>
-        眼睛干涩、酸胀、黑眼圈
+        <span class="btn-title">眼部问题识别</span>
+        <span class="btn-desc">干涩、酸胀、模糊、黑眼圈</span>
     </div>
     <div class="symptom-btn" onclick="selectSymptom('head', this, event)">
-        <span class="btn-title">头部眩晕偏痛</span>
-        偏头痛、太阳穴跳痛、沉重
+        <span class="btn-title">头部问题识别</span>
+        <span class="btn-desc">偏头痛、太阳穴痛、头晕</span>
     </div>
     <div class="symptom-btn" onclick="selectSymptom('sleep', this, event)">
-        <span class="btn-title">入睡困难多梦</span>
-        难入睡、易醒、醒后疲劳
+        <span class="btn-title">睡眠问题识别</span>
+        <span class="btn-desc">入睡困难、多梦、醒后累</span>
     </div>
     <div class="symptom-btn" onclick="selectSymptom('neck', this, event)">
-        <span class="btn-title">肩颈僵硬酸痛</span>
-        脖子僵硬、肩膀酸痛
+        <span class="btn-title">肩颈酸痛识别</span>
+        <span class="btn-desc">脖子僵硬、肩膀酸痛</span>
     </div>
-    <div class="symptom-btn" onclick="selectSymptom('reset', this, event)" style="margin-top:10px; opacity:0.7; border-style:dashed;">
-        重置全屏扫描识别
-    </div>
+    <div class="symptom-btn" onclick="selectSymptom('reset', this, event)" style="opacity:0.6; border-style:dashed;">重置全屏识别</div>
 </div>
 
 <div id="detail-card" onclick="event.stopPropagation()">
-    <div class="card-title" id="p-name">穴位名称</div>
+    <div class="card-header">
+        <div class="card-title" id="p-name">穴位名称</div>
+    </div>
     <div class="card-body">
-        <div style="margin-bottom:12px;"><b style="color:var(--neon)">[ 导引定位 ]</b> <span id="p-loc"></span></div>
-        <div><b style="color:var(--neon)">[ 智慧建议 ]</b> <span id="p-eff"></span></div>
+        <div class="card-row"><span class="row-label">[ 定位 ]</span><span id="p-loc"></span></div>
+        <div class="card-row"><span class="row-label">[ 手法 ]</span><span id="p-method"></span></div>
+        <div class="card-row"><span class="row-label">[ 功效 ]</span><span id="p-eff"></span></div>
     </div>
 </div>
 
@@ -107,44 +110,34 @@
     const videoElement = document.getElementById('input_video');
     const canvasElement = document.getElementById('output_canvas');
     const canvasCtx = canvasElement.getContext('2d');
-    const THEME_COLOR = "#AEE31B"; 
     
     let selectedType = 'reset';
     let lastResults = null;
 
-    const SYMPTOMS = {
-        'eye': { points: ['攒竹', '鱼腰', '四白'], advise: '建议：深呼吸，用指腹轻点按，每次持续3分钟。' },
-        'head': { points: ['太阳穴', '神庭', '印堂'], advise: '建议：顺时针按压太阳穴，配合向后推按神庭。' },
-        'sleep': { points: ['安眠点', '印堂'], advise: '建议：睡前点按印堂及耳后安眠区，有助于宁心。' },
-        'neck': { points: ['肩井'], advise: '建议：揉捏肩井穴，配合扩胸运动以松解筋膜。' },
-        'reset': { points: [], advise: '' }
-    };
-
-    // 重新严谨校对的穴位索引及信息
+    // 核心数据：完全按照您的文本更新
     const ACUPOINTS = [
-        { type:'eye', name: "攒竹", index: 55, loc: "眉头凹陷处", eff: "缓解眼睑瞤动、消除视疲劳" },
-        { type:'eye', name: "鱼腰", index: 52, loc: "眉毛正中点", eff: "缓解目赤肿痛、眼部胀痛" },
-        { type:'eye', name: "四白", index: 101, loc: "瞳孔直下眶下孔凹陷处", eff: "改善黑眼圈、疏风明目" },
-        { type:'head', name: "太阳穴", index: 21, loc: "眉梢与目外眦之间向后一寸", eff: "缓解偏头痛、清脑明目" },
-        { type:'head', name: "神庭", index: 10, loc: "前发际正中直上0.5寸", eff: "宁神醒脑、缓解眩晕" },
-        { type:'head', name: "印堂", index: 9, loc: "两眉头连线中点", eff: "安神定惊、缓解前额痛" },
-        { type:'sleep', name: "安眠点", index: 153, loc: "耳后凹陷与枕骨下缘附近", eff: "宁心安神、辅助改善睡眠" },
-        { type:'neck', name: "肩井", isPose: true, index: 11, loc: "大椎与肩峰连线中点", eff: "主治肩背痹痛、项强" }
+        // 眼部
+        { category:['eye'], name: "睛明", index: 133, loc: "眼内角稍上方凹陷处（靠近鼻梁）", method: "食指轻按，不打圈，轻压30秒×2次", eff: "缓解眼干、视疲劳，改善视力模糊" },
+        { category:['eye'], name: "攒竹", index: 55, loc: "眉头内侧凹陷（眉毛起点）", method: "拇指或食指轻按+小幅打圈，1分钟", eff: "缓解眼酸胀、眉骨紧张" },
+        { category:['eye'], name: "四白", index: 101, loc: "瞳孔正下方约一指处", method: "食指轻按，避免用力过大，30秒×2", eff: "改善黑眼圈、眼袋，促进眼周循环" },
+        { category:['eye','head'], name: "太阳穴", index: 21, loc: "眉梢与眼角延长线外侧凹陷", method: "中指顺时针打圈按摩1分钟", eff: "缓解眼疲劳、减轻胀痛 / 止头痛、缓解偏头痛" },
+        { category:['eye','head','sleep'], name: "风池", index: 153, loc: "后颈发际线两侧凹陷（侧前方可见区）", method: "双手拇指向内上方顶按1分钟", eff: "改善眼干、头晕；缓解紧张型失眠" },
+        // 头部
+        { category:['head','sleep'], name: "百会", index: 10, loc: "头顶正中（前发际正中直上）", method: "中指垂直按压+缓慢放松，1分钟", eff: "提神醒脑、缓解头晕；调节神经，改善睡眠" },
+        { category:['head'], name: "天柱", index: 152, loc: "后颈两侧大筋外侧凹陷处", method: "拇指向上推按1分钟", eff: "缓解头重、颈紧引起的头痛" },
+        // 睡眠
+        { category:['sleep'], name: "安眠", index: 454, loc: "耳后翳风与风池之间中点", method: "食指或拇指轻按+慢揉1–2分钟", eff: "助眠核心穴，缓解失眠、多梦" },
+        { category:['sleep'], name: "印堂", index: 9, loc: "两眉中间", method: "食指轻按+顺时针打圈1分钟", eff: "安神、缓解焦虑、帮助入睡" },
+        // 肩颈
+        { category:['neck'], name: "肩井", isPose: true, index: 11, loc: "大椎与肩峰连线中点", method: "拇指与食中指配合提捏，或手掌按揉", eff: "主治颈项强痛、肩背沉重" }
     ];
 
     function selectSymptom(type, btn, event) {
-        event.stopPropagation(); // 防止触发body隐藏逻辑
+        event.stopPropagation();
         selectedType = type;
         document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
         hideCard();
-    }
-
-    function handleGlobalClick(event) {
-        // 点击空白处隐藏卡片
-        if (!document.getElementById('detail-card').contains(event.target)) {
-            hideCard();
-        }
     }
 
     function hideCard() {
@@ -165,15 +158,12 @@
             
             ACUPOINTS.forEach(p => {
                 let lm = null;
-                if (p.isPose && results.poseLandmarks) {
-                    lm = results.poseLandmarks[p.index];
-                } else if (!p.isPose && results.faceLandmarks) {
-                    lm = results.faceLandmarks[p.index];
-                }
+                if (p.isPose && results.poseLandmarks) lm = results.poseLandmarks[p.index];
+                else if (!p.isPose && results.faceLandmarks) lm = results.faceLandmarks[p.index];
 
                 if (lm) {
-                    const isActive = selectedType === 'reset' || SYMPTOMS[selectedType].points.includes(p.name);
-                    drawPoint(lm, p, isActive);
+                    const isVisible = selectedType === 'reset' || p.category.includes(selectedType);
+                    drawPoint(lm, p, isVisible);
                 }
             });
         }
@@ -182,9 +172,10 @@
 
     function drawCyberGrid(landmarks) {
         canvasCtx.beginPath();
-        canvasCtx.strokeStyle = "rgba(174, 227, 27, 0.25)";
+        canvasCtx.strokeStyle = "rgba(174, 227, 27, 0.2)";
         canvasCtx.lineWidth = 0.5;
-        [10, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 10].forEach((idx, i) => {
+        const oval = [10, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 10];
+        oval.forEach((idx, i) => {
             const p = landmarks[idx];
             if(i === 0) canvasCtx.moveTo(p.x * canvasElement.width, p.y * canvasElement.height);
             else canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height);
@@ -202,13 +193,13 @@
             canvasCtx.arc(x, y, 10 + (time % 1) * 12, 0, Math.PI * 2);
             canvasCtx.strokeStyle = `rgba(174, 227, 27, ${1 - (time % 1)})`;
             canvasCtx.stroke();
-            canvasCtx.fillStyle = THEME_COLOR;
+            canvasCtx.fillStyle = "#AEE31B";
         } else {
             canvasCtx.fillStyle = "rgba(255,255,255,0.2)";
         }
 
         canvasCtx.beginPath();
-        canvasCtx.arc(x, y, active ? 6 : 2.5, 0, Math.PI * 2);
+        canvasCtx.arc(x, y, active ? 6 : 2, 0, Math.PI * 2);
         canvasCtx.fill();
 
         if (active) {
@@ -217,20 +208,23 @@
             canvasCtx.scale(-1, 1);
             canvasCtx.fillStyle = "white";
             canvasCtx.font = "bold 14px Arial";
+            canvasCtx.shadowBlur = 4;
+            canvasCtx.shadowColor = "black";
             canvasCtx.fillText(data.name, 12, 5);
             canvasCtx.restore();
         }
     }
 
-    // 交互核心：增加“最近点优先”逻辑，彻底修复误触
+    // 交互逻辑：最近邻精准判定
     canvasElement.addEventListener('click', (e) => {
         if (!lastResults) return;
+        e.stopPropagation();
         const rect = canvasElement.getBoundingClientRect();
         const clickX = 1 - (e.clientX - rect.left) / rect.width;
         const clickY = (e.clientY - rect.top) / rect.height;
 
-        let closestPoint = null;
-        let minDistance = 0.025; // 进一步缩小点击半径，提升精度
+        let selectedPoint = null;
+        let minDistance = 0.025; // 严格限制点击半径
 
         ACUPOINTS.forEach(p => {
             let lm = null;
@@ -238,29 +232,23 @@
             else if (!p.isPose && lastResults.faceLandmarks) lm = lastResults.faceLandmarks[p.index];
 
             if (lm) {
-                const dist = Math.hypot(clickX - lm.x, (clickY - lm.y) * (rect.height / rect.width));
+                const dist = Math.hypot(clickX - lm.x, (clickY - lm.y) * (rect.height/rect.width));
                 if (dist < minDistance) {
                     minDistance = dist;
-                    closestPoint = p;
+                    selectedPoint = p;
                 }
             }
         });
 
-        if (closestPoint) {
-            showDetail(closestPoint);
-            e.stopPropagation();
-        } else {
-            hideCard();
-        }
+        if (selectedPoint) showCard(selectedPoint);
+        else hideCard();
     });
 
-    function showDetail(p) {
+    function showCard(p) {
         document.getElementById('p-name').innerText = p.name;
         document.getElementById('p-loc').innerText = p.loc;
-        const modeAdvise = (selectedType !== 'reset' && SYMPTOMS[selectedType].points.includes(p.name))
-                           ? SYMPTOMS[selectedType].advise 
-                           : "建议：每日点按2-3次，力度以微酸胀感为宜。";
-        document.getElementById('p-eff').innerText = p.eff + "。" + modeAdvise;
+        document.getElementById('p-method').innerText = p.method;
+        document.getElementById('p-eff').innerText = p.eff;
         document.getElementById('detail-card').classList.add('show');
     }
 
